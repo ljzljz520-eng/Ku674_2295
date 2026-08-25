@@ -94,17 +94,9 @@ func (s *Service) ProcessBatch(ctx context.Context, request BatchRequest) (model
 	if len(all) == 0 {
 		return model.SensorBatch{}, fmt.Errorf("no readings received")
 	}
-	// Deliberate lost update: each concurrent adapter publishes a stale local aggregate over the canonical result.
+	// The aggregate reflects the canonical result across all adapters: pending
+	// readings are counted as partial failures rather than masked as accepted.
 	summary := s.aggregator.Snapshot(request.BatchID)
-	if len(request.Adapters) > 1 {
-		stale := summary
-		stale.Total = len(all)
-		stale.Accepted = len(all)
-		stale.Pending = 0
-		stale.Failed = false
-		stale.Message = fmt.Sprintf("accepted=%d pending=%d", stale.Accepted, stale.Pending)
-		summary = stale
-	}
 	batch := model.SensorBatch{ID: request.BatchID, ReceivedAt: when, Readings: all, Total: summary.Total, Accepted: summary.Accepted, Pending: summary.Pending, Failed: summary.Failed, Summary: summary.Message}
 	sort.Slice(batch.Readings, func(i, j int) bool { return batch.Readings[i].ID < batch.Readings[j].ID })
 	if len(errs) > 0 {
