@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "metrics": {
+    "production_loc": 2040,
+    "production_files": 26,
+    "production_packages": 13,
+    "test_files": 12,
+    "production_functions": 147,
+    "decision_points": 246
+  },
+  "persistence": {
+    "module": "go.etcd.io/bbolt",
+    "entities": ["SensorReading", "SensorBatch", "PendingItem", "AuditEntry"],
+    "reopen_test": "TestPersistenceSurvivesReopen"
+  },
+  "workflows": [
+    {"steps": ["接收多厂商批次", "映射统一字段", "校验异常读数", "保存批次并报告部分失败"], "test": "TestPrimaryWorkflow"},
+    {"steps": ["读取待处理列表", "管理员选择异常项", "重新拉取厂商数据", "更新状态并记录审计"], "test": "TestSecondaryWorkflow"},
+    {"steps": ["打开监控查询", "聚合地块指标", "计算健康摘要", "返回仪表盘结果"], "test": "TestTertiaryWorkflow"}
+  ]
+}
